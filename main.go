@@ -1,11 +1,17 @@
 package main
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 	"time"
 )
+
+type User struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
 
 type Task struct {
 	ID          uint       `json:"id"`
@@ -16,14 +22,79 @@ type Task struct {
 	CreatedAt   *time.Time `json:"created_at"`
 }
 
-type User struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 var Users []User
 var Tasks []Task
+
+var jwtSecret = []byte("secret_key")
+
+func createToken(userID uint) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(), //Lives 24 hours
+	}
+	//create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token
+	return token.SignedString(jwtSecret)
+}
+
+func authMiddleware(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+
+	if authHeader == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Authorization header required",
+		})
+		c.Abort()
+		return
+	}
+
+	const prefix = "Bearer "
+
+	if len(prefix) >= len(authHeader) || prefix != authHeader[:len(prefix)] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Authorization header must be bearer",
+		})
+		c.Abort()
+		return
+	}
+
+	tokenString := authHeader[len(prefix):]
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok { // Checking the algorithm
+			return nil, jwt.ErrInvalidKey
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid token",
+		})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		c.Abort()
+		return
+	}
+
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user_id in token"})
+		c.Abort()
+		return
+	}
+	userID := uint(userIDFloat)
+
+	c.Set("userID", userID)
+
+	c.Next()
+}
 
 func home(c *gin.Context) {
 	c.JSON(200, "")
@@ -40,9 +111,17 @@ func login(c *gin.Context) {
 
 	for _, u := range Users {
 		if u.Username == user.Username && u.Password == user.Password {
+			token, err := createToken(u.ID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to generate token",
+				})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Login successful",
 				"user_id": u.ID,
+				"token":   token,
 			})
 			return
 		}
@@ -83,22 +162,15 @@ func register(c *gin.Context) {
 }
 
 func getTasks(c *gin.Context) {
-	userIDStr := c.Query("user_id")
-
-	if userIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
-		return
-	}
-	userIDUint, err := strconv.ParseUint(userIDStr, 10, 64)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "UserID not found in context"})
 		return
 	}
 
 	userTasks := make([]Task, 0)
 	for _, t := range Tasks {
-		if uint64(t.UserID) == userIDUint {
+		if t.UserID == userID.(uint) {
 			userTasks = append(userTasks, t)
 		}
 	}
@@ -136,7 +208,10 @@ func addTask(c *gin.Context) {
 		})
 		return
 	}
+
+	userID, _ := c.Get("userID")
 	newTask.ID = uint(len(Tasks) + 1)
+	newTask.UserID = userID.(uint)
 	Tasks = append(Tasks, newTask)
 	c.JSON(http.StatusOK, gin.H{
 		"task": newTask,
@@ -147,15 +222,19 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/", home)
-
 	r.POST("/login", login)
-
 	r.POST("/register", register)
 
-	r.GET("/tasks", getTasks)
+	auth := r.Group("/")
+	auth.Use(authMiddleware)
+	{
+		auth.GET("/tasks", getTasks)
+		auth.POST("/tasks", addTask)
+	}
 
-	r.POST("/tasks", addTask)
-
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		return
+	}
 
 }
