@@ -97,8 +97,15 @@ func authMiddleware(c *gin.Context) {
 		return jwtSecret, nil
 	})
 
-	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "failed to parse token: " + err.Error(),
+		})
+		return
+	}
+
+	if !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "invalid token",
 		})
 		return
