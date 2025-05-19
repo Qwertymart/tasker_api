@@ -1,31 +1,59 @@
 package main
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 type User struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	Username string `gorm:"unique;not null" json:"username"`
+	Password string `gorm:"not null" json:"password"`
+	Tasks    []Task `gorm:"foreignKey:UserID"`
 }
 
 type Task struct {
-	ID          uint       `json:"id"`
-	Title       string     `json:"title"`
+	ID          uint       `gorm:"primaryKey" json:"id"`
+	Title       string     `gorm:"not null" json:"title"`
 	Description string     `json:"description"`
 	Deadline    *time.Time `json:"deadline"`
-	UserID      uint       `json:"user_id"`
-	CreatedAt   *time.Time `json:"created_at"`
+	UserID      uint       `gorm:"not null;index" json:"user_id"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
 }
 
-var Users []User
-var Tasks []Task
+var jwtSecret []byte
 
-var jwtSecret = []byte("secret_key")
+func init() {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	jwtSecret = []byte(secret)
+}
+
+var DB *gorm.DB
+
+func connectDB() {
+	dsn := "host=localhost user=postgres password=5432 dbname=task_manager port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	err = db.AutoMigrate(&User{}, &Task{})
+	if err != nil {
+		log.Fatal("Failed to migrate:", err)
+	}
+
+	DB = db
+}
 
 func createToken(userID uint) (string, error) {
 	claims := jwt.MapClaims{
@@ -97,62 +125,71 @@ func authMiddleware(c *gin.Context) {
 }
 
 func home(c *gin.Context) {
-	c.JSON(200, "")
+	c.JSON(http.StatusOK, "")
 }
 
 func login(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var input User
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
-
-	for _, u := range Users {
-		if u.Username == user.Username && u.Password == user.Password {
-			token, err := createToken(u.ID)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to generate token",
-				})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Login successful",
-				"user_id": u.ID,
-				"token":   token,
-			})
-			return
-		}
+	var user User
+	if err := DB.Where("username = ? AND password = ?", input.Username, input.Password).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
 	}
 
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"error": "Invalid username or password",
+	token, err := createToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to generate token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"user_id": user.ID,
+		"token":   token,
 	})
 }
 
 func register(c *gin.Context) {
-	var user User
+	var input User
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	for _, u := range Users {
-		if u.Username == user.Username {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Username taken",
-			})
-		}
+	var user User
+
+	if err := DB.Where("username = ?", input.Username).First(&user).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Username taken",
+		})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
-	user.ID = uint(len(Users) + 1)
-	Users = append(Users, user)
+	user = User{
+		Username: input.Username,
+		Password: input.Password,
+	}
+
+	if err := DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to create user",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User registered successfully",
@@ -168,57 +205,85 @@ func getTasks(c *gin.Context) {
 		return
 	}
 
-	userTasks := make([]Task, 0)
-	for _, t := range Tasks {
-		if t.UserID == userID.(uint) {
-			userTasks = append(userTasks, t)
-		}
+	var tasks []Task
+	if err := DB.Where("user_id = ?", userID.(uint)).Find(&tasks).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get tasks"})
+		return
 	}
 
-	c.JSON(http.StatusOK, userTasks)
+	c.JSON(http.StatusOK, tasks)
 }
 
 func addTask(c *gin.Context) {
 	var newTask Task
-
 	if err := c.ShouldBindJSON(&newTask); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if newTask.Title == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "empty title",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "empty title"})
 		return
 	}
 
-	if newTask.CreatedAt == nil || newTask.Deadline == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "created_at and deadline must be provided",
-		})
-		return
-	}
-
-	if newTask.CreatedAt.After(*newTask.Deadline) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid deadline: created_at is after deadline",
-		})
+	if newTask.Deadline != nil && time.Now().After(*newTask.Deadline) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Deadline cannot be in the past"})
 		return
 	}
 
 	userID, _ := c.Get("userID")
-	newTask.ID = uint(len(Tasks) + 1)
 	newTask.UserID = userID.(uint)
-	Tasks = append(Tasks, newTask)
+
+	if err := DB.Create(&newTask).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"task": newTask})
+}
+
+func deleteTask(c *gin.Context) {
+	var input struct {
+		ID uint `json:"id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	userID, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID has invalid type"})
+		return
+	}
+
+	result := DB.Where("id = ? AND user_id = ?", input.ID, userID).Delete(&Task{})
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found or does not belong to user"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"task": newTask,
+		"message": "Task deleted successfully",
+		"id":      input.ID,
 	})
 }
 
 func main() {
+	connectDB()
 	r := gin.Default()
 
 	r.GET("/", home)
@@ -230,11 +295,12 @@ func main() {
 	{
 		auth.GET("/tasks", getTasks)
 		auth.POST("/tasks", addTask)
+		auth.DELETE("/tasks", deleteTask)
 	}
 
 	err := r.Run(":8080")
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
 
 }
