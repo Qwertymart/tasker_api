@@ -5,8 +5,8 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
-	"tasker_api/task/internal/model"
-	"tasker_api/task/internal/service"
+	"task/internal/model"
+	"task/internal/service"
 	"time"
 )
 

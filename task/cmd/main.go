@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/gin-gonic/gin"
 	"log"
-	"tasker_api/task/internal/handler"
-	"tasker_api/task/internal/model"
+	"task/internal/handler"
+	"task/internal/model"
 )
 
 func main() {

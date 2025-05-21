@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 	"gorm.io/gorm"
-	"tasker_api/task/internal/model"
+	"task/internal/model"
 	"time"
 )
 
