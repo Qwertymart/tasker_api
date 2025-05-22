@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "pkg/userpb;userpb";
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  bool exists = 1;
+}
