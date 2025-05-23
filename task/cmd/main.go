@@ -1,10 +1,12 @@
-package cmd
+package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 	"log"
 	"task/internal/handler"
 	"task/internal/model"
+	"task/pkg/userpb"
 )
 
 func main() {
@@ -13,10 +15,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r := gin.Default()
+	// gRPC подключение к user-сервису
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("failed to connect to user service: %v", err)
+	}
+	defer conn.Close()
+	userClient := userpb.NewUserServiceClient(conn)
 
-	// создаём обработчик с доступом к БД
-	taskHandler := handler.NewTaskHandler(db)
+	r := gin.Default()
+	taskHandler := handler.NewTaskHandler(db, userClient)
 
 	r.GET("/tasks", taskHandler.GetTasks)
 	r.POST("/tasks", taskHandler.AddTask)

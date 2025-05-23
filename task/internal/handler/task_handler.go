@@ -1,34 +1,60 @@
 package handler
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"task/internal/model"
 	"task/internal/service"
+	"task/pkg/userpb"
 	"time"
 )
 
 type TaskHandler struct {
-	s *service.TaskService
+	s          *service.TaskService
+	userClient userpb.UserServiceClient
 }
 
-func NewTaskHandler(db *gorm.DB) *TaskHandler {
+func NewTaskHandler(db *gorm.DB, userClient userpb.UserServiceClient) *TaskHandler {
 	return &TaskHandler{
-		s: service.NewTaskService(db),
+		s:          service.NewTaskService(db),
+		userClient: userClient,
 	}
+}
+
+func (h *TaskHandler) validateUser(c *gin.Context) (uint, bool) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "userID missing"})
+		return 0, false
+	}
+
+	userID, ok := userIDVal.(uint)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userID"})
+		return 0, false
+	}
+
+	resp, err := h.userClient.GetUser(context.Background(), &userpb.GetUserRequest{
+		Id: strconv.Itoa(int(userID)),
+	})
+	if err != nil || !resp.Exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
+		return 0, false
+	}
+
+	return userID, true
 }
 
 func (h *TaskHandler) GetTasks(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "UserID not found in context"})
+	userID, ok := h.validateUser(c)
+	if !ok {
 		return
 	}
 
-	tasks, err := h.s.GetTaskByUser(userID.(uint))
-
+	tasks, err := h.s.GetTaskByUser(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -44,8 +70,12 @@ func (h *TaskHandler) AddTask(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("userID")
-	newTask.UserID = userID.(uint)
+	userID, ok := h.validateUser(c)
+	if !ok {
+		return
+	}
+
+	newTask.UserID = userID
 
 	if err := h.s.CreateTask(&newTask); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -65,15 +95,8 @@ func (h *TaskHandler) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	userIDVal, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "UserID not found in context"})
-		return
-	}
-
-	userID, ok := userIDVal.(uint)
+	userID, ok := h.validateUser(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userID type"})
 		return
 	}
 
@@ -93,7 +116,7 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusOK, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -104,15 +127,8 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 		return
 	}
 
-	userIDVal, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found in context"})
-		return
-	}
-
-	userID, ok := userIDVal.(uint)
+	userID, ok := h.validateUser(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userID type"})
 		return
 	}
 
@@ -141,15 +157,8 @@ func (h *TaskHandler) UpdateStateTask(c *gin.Context) {
 		return
 	}
 
-	userIDVal, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "userID not found in context"})
-		return
-	}
-
-	userID, ok := userIDVal.(uint)
+	userID, ok := h.validateUser(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userID type"})
 		return
 	}
 
@@ -159,5 +168,4 @@ func (h *TaskHandler) UpdateStateTask(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "task state updated successfully"})
-
 }

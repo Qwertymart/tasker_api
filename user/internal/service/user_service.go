@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 	"gorm.io/gorm"
-	"tasker_api/user/internal/model"
+	"user/internal/model"
 )
 
 type UserService struct {
@@ -21,6 +21,16 @@ func (s *UserService) GetUserByID(userID uint) (*model.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (s *UserService) CheckByID(userID uint) (bool, error) {
+	var search model.User
+	if err := s.db.Where("id = ?", userID).First(&search).Error; err == nil {
+		return true, nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, errors.New("database error")
+	}
+	return false, nil
 }
 
 func (s *UserService) CreateUser(user *model.User) error {
