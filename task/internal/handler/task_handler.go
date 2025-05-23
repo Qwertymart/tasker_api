@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -25,6 +26,13 @@ func NewTaskHandler(db *gorm.DB, userClient userpb.UserServiceClient) *TaskHandl
 }
 
 func (h *TaskHandler) validateUser(c *gin.Context) (uint, bool) {
+
+	//TODO потом убрать
+	userIDStr := c.GetHeader("userID")
+	userIDUint64, err := strconv.ParseUint(userIDStr, 10, 64)
+	userID := uint(userIDUint64)
+	c.Set("userID", userID)
+
 	userIDVal, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "userID missing"})
@@ -37,6 +45,7 @@ func (h *TaskHandler) validateUser(c *gin.Context) (uint, bool) {
 		return 0, false
 	}
 
+	fmt.Println(userIDVal)
 	resp, err := h.userClient.GetUser(context.Background(), &userpb.GetUserRequest{
 		Id: strconv.Itoa(int(userID)),
 	})
