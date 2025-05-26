@@ -15,7 +15,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// gRPC подключение к user-сервису
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("failed to connect to user service: %v", err)

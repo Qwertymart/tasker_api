@@ -27,7 +27,6 @@ func (s *UserServiceServer) GetUser(ctx context.Context, req *userpb.GetUserRequ
 	}
 	userID := uint(userID64)
 
-	// Проверяем наличие пользователя в базе
 	exists, err := s.userService.CheckByID(userID)
 	if err != nil {
 		return nil, err
