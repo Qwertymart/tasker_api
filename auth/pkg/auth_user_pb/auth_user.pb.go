@@ -77,6 +77,7 @@ type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Id            uint64                 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -123,6 +124,13 @@ func (x *RegisterResponse) GetError() string {
 		return x.Error
 	}
 	return ""
+}
+
+func (x *RegisterResponse) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
 }
 
 type LoginRequest struct {
@@ -180,7 +188,8 @@ func (x *LoginRequest) GetPassword() string {
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Id            uint64                 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -229,6 +238,13 @@ func (x *LoginResponse) GetError() string {
 	return ""
 }
 
+func (x *LoginResponse) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_auth_user_proto protoreflect.FileDescriptor
 
 const file_auth_user_proto_rawDesc = "" +
@@ -236,16 +252,18 @@ const file_auth_user_proto_rawDesc = "" +
 	"\x0fauth_user.proto\x12\x04user\"I\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"B\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"R\n" +
 	"\x10RegisterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"F\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\x04R\x02id\"F\n" +
 	"\fLoginRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"?\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"O\n" +
 	"\rLoginResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error2z\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\x04R\x02id2z\n" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.user.RegisterRequest\x1a\x16.user.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponseB\x1fZ\x1dpkg/auth_user_pb;auth_user_pbb\x06proto3"

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"user/internal/model"
+	"user/pkg/auth_user_pb"
 	"user/pkg/userpb"
 	"user/transport"
 )
@@ -17,6 +18,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	userpb.RegisterUserServiceServer(grpcServer, transport.NewUserServiceServer(db))
+	auth_user_pb.RegisterAuthServiceServer(grpcServer, transport.NewUserAuthServer(db))
 
 	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {

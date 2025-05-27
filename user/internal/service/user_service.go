@@ -33,22 +33,26 @@ func (s *UserService) CheckByID(userID uint) (bool, error) {
 	return true, nil
 }
 
-func (s *UserService) CreateUser(user *model.User) error {
+func (s *UserService) CreateUser(user *model.User) (uint, error) {
 	if user.Username == "" {
-		return errors.New("empty username")
+		return 0, errors.New("empty username")
 	}
 	if user.Password == "" {
-		return errors.New("empty password")
+		return 0, errors.New("empty password")
 	}
 
 	var existing model.User
 	if err := s.db.Where("username = ?", user.Username).First(&existing).Error; err == nil {
-		return errors.New("username taken")
+		return 0, errors.New("username taken")
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return errors.New("database error")
+		return 0, errors.New("database error")
 	}
 
-	return s.db.Create(user).Error
+	if err := s.db.Create(user).Error; err != nil {
+		return 0, err
+	}
+
+	return user.ID, nil
 }
 
 func (s *UserService) DeleteUser(userID uint) error {
@@ -76,4 +80,12 @@ func (s *UserService) UpdateUser(userID uint, updateUser *model.User) error {
 	}
 
 	return s.db.Save(&user).Error
+}
+
+func (s *UserService) GetUserByUsername(username string) (*model.User, error) {
+	var user model.User
+	if err := s.db.Where("username = ?", username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

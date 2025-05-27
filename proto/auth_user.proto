@@ -17,6 +17,7 @@ message RegisterRequest {
 message RegisterResponse {
   bool success = 1;
   string error = 2;
+  uint64 id = 3;
 }
 
 message LoginRequest {
@@ -26,5 +27,6 @@ message LoginRequest {
 
 message LoginResponse {
   bool success = 1;
-  string error = 3;
+  string error = 2;
+  uint64 id = 3;
 }

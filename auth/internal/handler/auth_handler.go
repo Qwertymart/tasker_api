@@ -30,8 +30,9 @@ func NewAuthHandler(authClient auth_user_pb.AuthServiceClient) *AuthHandler {
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	var input struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username       string `json:"username"`
+		Password       string `json:"password"`
+		RepeatPassword string `json:"repeat_password"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -41,6 +42,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	if input.Username == "" || input.Password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and password are required"})
+		return
+	}
+
+	if input.RepeatPassword != input.Password {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
 		return
 	}
 
@@ -60,7 +66,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully,",
+		"id": res.Id})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -95,7 +102,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := generateJWT(input.Username)
+	token, err := generateJWT(uint(res.Id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
 		return
@@ -104,14 +111,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token":   token,
 		"message": "Login successful",
+		"id":      res.Id,
 	})
 
 }
 
-func generateJWT(username string) (string, error) {
+func generateJWT(id uint) (string, error) {
 	claims := jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(time.Hour * 72).Unix(), // Life of token 72 hours
+		"id":  id,
+		"exp": time.Now().Add(time.Hour * 72).Unix(), // Life of token 72 hours
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
