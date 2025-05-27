@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"user/internal/model"
 )
@@ -12,6 +13,19 @@ type UserService struct {
 
 func NewUserService(db *gorm.DB) *UserService {
 	return &UserService{db: db}
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func comparePassword(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(password), []byte(hash))
+	return err == nil
 }
 
 func (s *UserService) GetUserByID(userID uint) (*model.User, error) {
@@ -48,6 +62,12 @@ func (s *UserService) CreateUser(user *model.User) (uint, error) {
 		return 0, errors.New("database error")
 	}
 
+	hashedPassword, err := hashPassword(user.Password)
+	if err != nil {
+		return 0, errors.New("failed to hash password")
+	}
+	user.Password = hashedPassword
+
 	if err := s.db.Create(user).Error; err != nil {
 		return 0, err
 	}
@@ -76,12 +96,15 @@ func (s *UserService) UpdateUser(userID uint, updateUser *model.User) error {
 		user.Username = updateUser.Username
 	}
 	if updateUser.Password != "" {
-		user.Password = updateUser.Password
+		hashedPassword, err := hashPassword(updateUser.Password)
+		if err != nil {
+			return errors.New("failed to hash password")
+		}
+		user.Password = hashedPassword
 	}
 
 	return s.db.Save(&user).Error
 }
-
 func (s *UserService) GetUserByUsername(username string) (*model.User, error) {
 	var user model.User
 	if err := s.db.Where("username = ?", username).First(&user).Error; err != nil {
