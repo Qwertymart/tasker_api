@@ -118,8 +118,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 func generateJWT(id uint) (string, error) {
 	claims := jwt.MapClaims{
-		"id":  id,
-		"exp": time.Now().Add(time.Hour * 72).Unix(), // Life of token 72 hours
+		"user_id": id,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(), // Life of token 72 hours
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
