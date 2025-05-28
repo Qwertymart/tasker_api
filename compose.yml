@@ -21,6 +21,9 @@ services:
       context: ./auth
     ports:
       - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - USER_SERVICE_ADDR=user_service:50051
     depends_on:
       user_service:
         condition: service_started
@@ -31,6 +34,14 @@ services:
       context: ./task
     ports:
       - "8081:8081"
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       user_service:
         condition: service_started
@@ -40,7 +51,15 @@ services:
     build:
       context: ./user
     ports:
-      - "443:443"
+      - "50051:50051"
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

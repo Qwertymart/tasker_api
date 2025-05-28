@@ -2,16 +2,18 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"auth/internal/handler"
 	"auth/pkg/auth_user_pb"
+
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
+	conn, err := grpc.Dial(os.Getenv("USER_SERVICE_ADDR"), grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 	if err != nil {
 		log.Fatalf("failed to connect to the user service: %v", err)
 	}
