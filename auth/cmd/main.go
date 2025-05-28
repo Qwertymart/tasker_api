@@ -4,10 +4,10 @@ import (
 	"log"
 	"time"
 
+	"auth/internal/handler"
+	"auth/pkg/auth_user_pb"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
-	"tasker_api/auth/internal/handler"
-	"tasker_api/auth/pkg/auth_user_pb"
 )
 
 func main() {

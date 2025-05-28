@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"auth/pkg/auth_user_pb"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
-	"tasker_api/auth/pkg/auth_user_pb"
 	"time"
 )
 
