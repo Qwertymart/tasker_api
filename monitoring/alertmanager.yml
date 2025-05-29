@@ -18,8 +18,8 @@ receivers:
   telegram_configs:
   - api_url: 'https://api.telegram.org'
     send_resolved: true
-    bot_token: xxxxx
-    chat_id: ttttttttttttt
+    bot_token: ${BOT_TOKEN}
+    chat_id: ${CHAT_ID}
     message: '{{ define "telegram.message" }}
               {{ if eq .Status "firing" }}🔥 {{ end }}{{ if eq .Status "resolved" }}✅ {{ end }}<b>[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} on {{ .CommonLabels.instance }}</b>
               {{ range .Alerts }}
