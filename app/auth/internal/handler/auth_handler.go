@@ -2,12 +2,13 @@ package handler
 
 import (
 	"auth/pkg/auth_user_pb"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 var jwtSecret []byte

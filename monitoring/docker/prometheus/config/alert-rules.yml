@@ -1,0 +1,11 @@
+groups:
+- name: docker-alerts
+  rules:
+  - alert: Conteiner down
+    expr: up < 1
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Conteiner non-operational"
+      description: "Conteiner {{ $labels.instance }} is down."

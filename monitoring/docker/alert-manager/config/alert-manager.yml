@@ -1,0 +1,47 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram_receiver
+  group_by: ["alertname", "Host"]
+  group_wait: 1s
+  group_interval: 1s
+  repeat_interval: 24h
+
+  routes:
+  - receiver: 'telegram_receiver'
+    matchers:
+    - severity="Critical"
+
+receivers:
+- name: 'telegram_receiver'
+  telegram_configs:
+  - api_url: 'https://api.telegram.org'
+    send_resolved: true
+    bot_token: xxxxx
+    chat_id: ttttttttttttt
+    message: '{{ define "telegram.message" }}
+              {{ if eq .Status "firing" }}🔥 {{ end }}{{ if eq .Status "resolved" }}✅ {{ end }}<b>[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} on {{ .CommonLabels.instance }}</b>
+              {{ range .Alerts }}
+              {{$severity := .Labels.severity -}}
+              {{if eq $severity "warning" -}}
+              <b>Severity: </b> {{$severity}} ⚠️
+              {{else if eq $severity "critical" -}}
+              <b>Severity: </b> {{$severity}} 🚨
+              {{else -}}
+              <b>Severity: </b> {{$severity}} 😱
+              {{ end -}}
+              {{$status := .Status -}}
+              {{ if eq $status "firing" -}}
+              <b>Date/Time: </b> {{ .StartsAt.Format "Mon 02 Jan 15:04:05 MST 2006" }}
+              {{else if eq $status "resolved" -}}
+              <b>Date/Time: </b> {{ .EndsAt.Format "Mon 02 Jan 15:04:05 MST 2006" }}
+              {{ end -}}
+              <b>Alert: </b> {{ .Annotations.title }}
+              <b>Description: </b> {{ .Annotations.description }}
+              <b>Details: </b>
+                {{ range .Labels.SortedPairs }} - {{ .Name | title }}: {{ .Value }}
+                {{ end }}
+              {{ end }}
+              {{ end }}'
+    parse_mode: 'HTML'
