@@ -6,23 +6,44 @@ scrape_configs:
   static_configs:
   - targets:
     - vmagent:8429
+
 - job_name: vmalert
   static_configs:
   - targets:
     - vmalert:8880
+
 - job_name: victoriametrics
   static_configs:
   - targets:
     - victoriametrics:8428
+
 - job_name: cadvisor
   static_configs:
     - targets:
       - cadvisor:8082
 
-rule_files:
-  - 'alert-rules.yml'
-alerting:
-  alertmanagers:
-    - scheme: http
-    - static_configs:
-        - targets: ['host.docker.internal:9093']
+- job_name: auth_service
+  static_configs:
+    - targets:
+      - auth_service:8080
+  scrape_interval: 10s
+
+- job_name: task_service
+  static_configs:
+    - targets:
+      - auth_service:8081
+
+- job_name: user_service
+  static_configs:
+    - targets:
+      - user_service:50051
+
+- job_name: postgres
+  static_configs:
+    - targets:
+      - postgres:5432
+
+- job_name: node-exporter
+  static_configs:
+    - targets:
+      - node-exporter:9100
