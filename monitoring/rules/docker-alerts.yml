@@ -1,11 +1,38 @@
 groups:
-- name: docker-alerts
+- name: container-alerts
   rules:
-  - alert: Service down
-    expr: up{job=~"(auth_service|task_service|user_service|postgres)"} == 0
-    for: 2m
+  - alert: AuthServiceDown
+    expr: absent(container_start_time_seconds{name=~".*auth_service.*"})
+    for: 30s
     labels:
-      severity: critical
+      severity: Critical
     annotations:
-      summary: "Service non-operational"
-      description: "Service {{ $labels.instance }} is down."
+      summary: "Auth Service container is down"
+      description: "Auth Service container is not running."
+
+  - alert: TaskServiceDown
+    expr: absent(container_start_time_seconds{name=~".*task_service.*"})
+    for: 30s
+    labels:
+      severity: Critical
+    annotations:
+      summary: "Task Service container is down"
+      description: "Task Service container is not running."
+
+  - alert: UserServiceDown
+    expr: absent(container_start_time_seconds{name=~".*user_service.*"})
+    for: 30s
+    labels:
+      severity: Critical
+    annotations:
+      summary: "User Service container is down"
+      description: "User Service container is not running."
+
+  - alert: PostgresDown
+    expr: absent(container_start_time_seconds{name=~".*postgres.*"})
+    for: 30s
+    labels:
+      severity: Critical
+    annotations:
+      summary: "PostgreSQL container is down"
+      description: "PostgreSQL container is not running."
