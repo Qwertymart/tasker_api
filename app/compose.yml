@@ -1,3 +1,10 @@
+volumes:
+  postgres-data: {}
+
+networks:
+  monitoring_default:
+    external: true
+
 services:
   postgres:
     image: postgres:alpine  
@@ -15,7 +22,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - default
+      - monitoring_default
 
   auth_service:
     image: auth_service
@@ -30,7 +37,7 @@ services:
       user_service:
         condition: service_started
     networks:
-      - default
+      - monitoring_default
 
   task_service:
     image: task_service
@@ -50,7 +57,7 @@ services:
       user_service:
         condition: service_started
     networks:
-      - default
+      - monitoring_default
     
   user_service:
     image: user_service
@@ -71,7 +78,5 @@ services:
         condition: service_healthy
         restart: true
     networks:
-      - default
+      - monitoring_default
     
-volumes:
-  postgres-data:
