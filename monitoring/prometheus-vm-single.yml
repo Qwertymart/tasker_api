@@ -1,49 +1,61 @@
 global:
   scrape_interval: 10s
+  evaluation_interval: 10s
 
 scrape_configs:
+- job_name: cadvisor
+  metrics_path: '/metrics'
+  static_configs:
+    - targets:
+      - cadvisor:8080
+      labels:
+            group: 'cadvisor'
+     
 - job_name: vmagent
+  metrics_path: '/metrics'
   static_configs:
   - targets:
     - vmagent:8429
+  
 
 - job_name: vmalert
+  metrics_path: '/metrics'
   static_configs:
   - targets:
     - vmalert:8880
 
 - job_name: victoriametrics
+  metrics_path: '/metrics'
   static_configs:
   - targets:
     - victoriametrics:8428
 
-- job_name: cadvisor
-  static_configs:
-    - targets:
-      - cadvisor:8082
-
 - job_name: auth_service
+  metrics_path: '/metrics'
   static_configs:
     - targets:
       - auth_service:8080
-  scrape_interval: 10s
 
 - job_name: task_service
+  metrics_path: '/metrics'
   static_configs:
     - targets:
-      - auth_service:8081
+      - task_service:8081
 
 - job_name: user_service
+  metrics_path: '/metrics'
   static_configs:
     - targets:
       - user_service:50051
 
 - job_name: postgres
+  metrics_path: '/metrics'
   static_configs:
     - targets:
       - postgres:5432
 
 - job_name: node-exporter
+  metrics_path: '/metrics'
   static_configs:
     - targets:
       - node-exporter:9100
