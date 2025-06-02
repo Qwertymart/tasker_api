@@ -245,6 +245,126 @@ func (x *LoginResponse) GetId() uint64 {
 	return 0
 }
 
+type GoogleLoginRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GoogleId      string                 `protobuf:"bytes,1,opt,name=google_id,json=googleId,proto3" json:"google_id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoogleLoginRequest) Reset() {
+	*x = GoogleLoginRequest{}
+	mi := &file_auth_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoogleLoginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoogleLoginRequest) ProtoMessage() {}
+
+func (x *GoogleLoginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoogleLoginRequest.ProtoReflect.Descriptor instead.
+func (*GoogleLoginRequest) Descriptor() ([]byte, []int) {
+	return file_auth_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GoogleLoginRequest) GetGoogleId() string {
+	if x != nil {
+		return x.GoogleId
+	}
+	return ""
+}
+
+func (x *GoogleLoginRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GoogleLoginRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GoogleLoginResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Id            uint64                 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GoogleLoginResponse) Reset() {
+	*x = GoogleLoginResponse{}
+	mi := &file_auth_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoogleLoginResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoogleLoginResponse) ProtoMessage() {}
+
+func (x *GoogleLoginResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_user_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoogleLoginResponse.ProtoReflect.Descriptor instead.
+func (*GoogleLoginResponse) Descriptor() ([]byte, []int) {
+	return file_auth_user_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GoogleLoginResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GoogleLoginResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *GoogleLoginResponse) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_auth_user_proto protoreflect.FileDescriptor
 
 const file_auth_user_proto_rawDesc = "" +
@@ -263,10 +383,19 @@ const file_auth_user_proto_rawDesc = "" +
 	"\rLoginResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x0e\n" +
-	"\x02id\x18\x03 \x01(\x04R\x02id2z\n" +
+	"\x02id\x18\x03 \x01(\x04R\x02id\"[\n" +
+	"\x12GoogleLoginRequest\x12\x1b\n" +
+	"\tgoogle_id\x18\x01 \x01(\tR\bgoogleId\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"U\n" +
+	"\x13GoogleLoginResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\x04R\x02id2\xc2\x01\n" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.user.RegisterRequest\x1a\x16.user.RegisterResponse\x120\n" +
-	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponseB\x1fZ\x1dpkg/auth_user_pb;auth_user_pbb\x06proto3"
+	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponse\x12F\n" +
+	"\x0fLoginWithGoogle\x12\x18.user.GoogleLoginRequest\x1a\x19.user.GoogleLoginResponseB\x1fZ\x1dpkg/auth_user_pb;auth_user_pbb\x06proto3"
 
 var (
 	file_auth_user_proto_rawDescOnce sync.Once
@@ -280,20 +409,24 @@ func file_auth_user_proto_rawDescGZIP() []byte {
 	return file_auth_user_proto_rawDescData
 }
 
-var file_auth_user_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_auth_user_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_auth_user_proto_goTypes = []any{
-	(*RegisterRequest)(nil),  // 0: user.RegisterRequest
-	(*RegisterResponse)(nil), // 1: user.RegisterResponse
-	(*LoginRequest)(nil),     // 2: user.LoginRequest
-	(*LoginResponse)(nil),    // 3: user.LoginResponse
+	(*RegisterRequest)(nil),     // 0: user.RegisterRequest
+	(*RegisterResponse)(nil),    // 1: user.RegisterResponse
+	(*LoginRequest)(nil),        // 2: user.LoginRequest
+	(*LoginResponse)(nil),       // 3: user.LoginResponse
+	(*GoogleLoginRequest)(nil),  // 4: user.GoogleLoginRequest
+	(*GoogleLoginResponse)(nil), // 5: user.GoogleLoginResponse
 }
 var file_auth_user_proto_depIdxs = []int32{
 	0, // 0: user.AuthService.Register:input_type -> user.RegisterRequest
 	2, // 1: user.AuthService.Login:input_type -> user.LoginRequest
-	1, // 2: user.AuthService.Register:output_type -> user.RegisterResponse
-	3, // 3: user.AuthService.Login:output_type -> user.LoginResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: user.AuthService.LoginWithGoogle:input_type -> user.GoogleLoginRequest
+	1, // 3: user.AuthService.Register:output_type -> user.RegisterResponse
+	3, // 4: user.AuthService.Login:output_type -> user.LoginResponse
+	5, // 5: user.AuthService.LoginWithGoogle:output_type -> user.GoogleLoginResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -310,7 +443,7 @@ func file_auth_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_user_proto_rawDesc), len(file_auth_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -9,8 +9,11 @@ import (
 
 type User struct {
 	ID       uint   `gorm:"primaryKey" json:"id"`
-	Username string `gorm:"unique;not null" json:"username"`
-	Password string `gorm:"not null" json:"password"`
+	Username string `gorm:"unique" json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	GoogleID string `gorm:"uniqueIndex" json:"google_id,omitempty"`
+	Email    string `gorm:"uniqueIndex" json:"email,omitempty"`
+	Name     string `json:"name,omitempty"`
 }
 
 func ConnectDB() (*gorm.DB, error) {

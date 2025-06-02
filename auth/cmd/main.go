@@ -20,13 +20,17 @@ func main() {
 	defer conn.Close()
 
 	authClient := auth_user_pb.NewAuthServiceClient(conn)
-
 	authHandler := handler.NewAuthHandler(authClient)
 
 	router := gin.Default()
 
+	// REST endpoints
 	router.POST("/register", authHandler.Register)
 	router.POST("/login", authHandler.Login)
+
+	// Google OAuth endpoints
+	router.GET("/google/login", authHandler.GoogleLogin)
+	router.GET("/google/callback", authHandler.GoogleCallback)
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("failed to launch the server: %v", err)

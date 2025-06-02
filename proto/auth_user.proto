@@ -7,6 +7,7 @@ option go_package = "pkg/auth_user_pb;auth_user_pb";
 service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc LoginWithGoogle(GoogleLoginRequest) returns (GoogleLoginResponse); // 👈 Новый метод
 }
 
 message RegisterRequest {
@@ -26,6 +27,18 @@ message LoginRequest {
 }
 
 message LoginResponse {
+  bool success = 1;
+  string error = 2;
+  uint64 id = 3;
+}
+
+message GoogleLoginRequest {
+  string google_id = 1;
+  string email = 2;
+  string name = 3;
+}
+
+message GoogleLoginResponse {
   bool success = 1;
   string error = 2;
   uint64 id = 3;

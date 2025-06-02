@@ -69,3 +69,37 @@ func (serv *UserAuthServer) Login(ctx context.Context, req *auth_user_pb.LoginRe
 		Error:   "",
 	}, nil
 }
+
+func (serv *UserAuthServer) LoginWithGoogle(ctx context.Context, req *auth_user_pb.GoogleLoginRequest) (*auth_user_pb.GoogleLoginResponse, error) {
+	user, err := serv.s.GetUserByUsername(req.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newUser := model.User{
+				Username: req.Email,
+				Password: "",
+			}
+			id, createErr := serv.s.CreateUser(&newUser)
+			if createErr != nil {
+				return &auth_user_pb.GoogleLoginResponse{
+					Success: false,
+					Error:   createErr.Error(),
+				}, nil
+			}
+			return &auth_user_pb.GoogleLoginResponse{
+				Id:      uint64(id),
+				Success: true,
+				Error:   "",
+			}, nil
+		}
+		return &auth_user_pb.GoogleLoginResponse{
+			Success: false,
+			Error:   err.Error(),
+		}, nil
+	}
+
+	return &auth_user_pb.GoogleLoginResponse{
+		Id:      uint64(user.ID),
+		Success: true,
+		Error:   "",
+	}, nil
+}
